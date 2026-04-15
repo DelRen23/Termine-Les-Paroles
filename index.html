@@ -3,99 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Micro d'Or - Mode Casque</title>
+    <title>Micro d'Or - Bluetooth Edition</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: #1a1f29; padding: 30px; border-radius: 30px; text-align: center; width: 85%; max-width: 400px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .artist-name { color: #1DB954; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; }
-        .btn-play { background: #ff4444; color: white; border: none; width: 90px; height: 90px; border-radius: 50%; cursor: pointer; font-size: 35px; margin-bottom: 20px; box-shadow: 0 0 20px rgba(255,68,68,0.5); }
-        input { width: 100%; padding: 15px; border-radius: 15px; border: none; font-size: 18px; text-align: center; background: #2a303c; color: white; outline: none; box-sizing: border-box; }
-        button.verify { width: 100%; padding: 15px; border-radius: 15px; border: none; background: #1DB954; color: white; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 16px; }
+        body { font-family: sans-serif; background: #0b0e14; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .card { background: #1a1f29; padding: 30px; border-radius: 30px; text-align: center; width: 85%; max-width: 400px; border: 1px solid #333; }
+        .btn-play { background: #1DB954; color: white; border: none; width: 90px; height: 90px; border-radius: 50%; cursor: pointer; font-size: 35px; margin-bottom: 20px; }
         .feedback { margin-top: 20px; font-weight: bold; min-height: 50px; font-size: 18px; }
+        input { width: 100%; padding: 15px; border-radius: 15px; border: none; background: #2a303c; color: white; text-align: center; font-size: 18px; outline: none; }
+        #unlocker { position:fixed; top:0; left:0; width:100%; height:100%; background:#0b0e14; z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
     </style>
 </head>
 <body>
 
+<div id="unlocker">
+    <button onclick="wakeUpBluetooth()" style="padding:25px 50px; border-radius:50px; border:none; background:#1DB954; color:white; font-weight:bold; font-size:22px; box-shadow: 0 0 20px rgba(29,185,84,0.5);">ACTIVER LE CASQUE 🎧</button>
+    <p style="margin-top:20px; color:#666; text-align:center; padding:0 20px;">Clique ici pour forcer la connexion Bluetooth en mode Vibreur</p>
+</div>
+
 <div class="card">
-    <div id="artistDisplay" class="artist-name">CHARGEMENT...</div>
-    <button class="btn-play" id="playBtn">▶️</button>
-    <div id="instruction" style="color:#888; font-size:12px; margin-bottom:15px;">Monte le son multimédia (Écouteurs)</div>
-    
-    <input type="text" id="userInput" placeholder="Écris la suite..." autocomplete="off">
-    <button class="verify" id="verifyBtn">VALIDER 🎤</button>
+    <div id="artistDisplay" style="color:#1DB954; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">...</div>
+    <button class="btn-play" id="playBtn" onclick="startClip()">▶️</button>
+    <input type="text" id="userInput" placeholder="Réponse..." autocomplete="off">
     <div id="feedback" class="feedback"></div>
 </div>
 
 <script>
-    // Liste des extraits directs (Lien Cjoint = Direct MP3)
     const songs = [
         { artist: "Céline Dion", url: "https://www.cjoint.com/doc/24_03/NCpuvYmO4J4_celine-extrait.mp3", endLyrics: "ENCORE" },
         { artist: "Indochine", url: "https://www.cjoint.com/doc/24_03/NCpuxmH8J4_indo-extrait.mp3", endLyrics: "LUNE" },
-        { artist: "Jean-Jacques Goldman", url: "https://www.cjoint.com/doc/24_03/NCpuyG68J4_goldman-extrait.mp3", endLyrics: "SIGNE" },
-        { artist: "Images", url: "https://www.cjoint.com/doc/24_03/NCpuzC88J4_images-extrait.mp3", endLyrics: "NUIT" }
+        { artist: "Jean-Jacques Goldman", url: "https://www.cjoint.com/doc/24_03/NCpuyG68J4_goldman-extrait.mp3", endLyrics: "SIGNE" }
     ];
 
     let current = {};
     const audio = new Audio();
-    
-    // Configuration pour forcer le passage sur Android
-    audio.preload = "auto";
     audio.crossOrigin = "anonymous";
+
+    // Cette fonction force le Bluetooth à rester "On"
+    function wakeUpBluetooth() {
+        // On joue un son vide pour "ouvrir" le canal Bluetooth
+        audio.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=";
+        audio.play().then(() => {
+            document.getElementById('unlocker').style.display = 'none';
+            nextSong();
+        }).catch(e => {
+            document.getElementById('unlocker').style.display = 'none';
+            nextSong();
+        });
+    }
 
     function nextSong() {
         current = songs[Math.floor(Math.random() * songs.length)];
         document.getElementById('artistDisplay').innerText = current.artist;
         document.getElementById('userInput').value = "";
         document.getElementById('feedback').innerText = "";
-        document.getElementById('feedback').style.color = "white";
         audio.src = current.url;
         audio.load();
     }
 
-    // Fonction de lecture robuste
     function startClip() {
-        // Sur Android, on réinitialise le volume à chaque clic
-        audio.volume = 1.0;
+        if(!audio.src) return;
         
-        const playPromise = audio.play();
-
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                document.getElementById('feedback').innerText = "Écoute...";
-                setTimeout(() => {
-                    audio.pause();
-                    audio.currentTime = 0;
-                    document.getElementById('feedback').innerText = "À toi !";
-                }, 6500);
-            }).catch(error => {
-                document.getElementById('feedback').innerText = "Appuie encore sur Play !";
-                console.log("Erreur lecture:", error);
-            });
-        }
+        // On force le volume à chaque fois (Bluetooth bug fix)
+        audio.volume = 1.0;
+        audio.currentTime = 0;
+        
+        audio.play();
+        document.getElementById('feedback').innerText = "Écoute bien...";
+        
+        setTimeout(() => {
+            audio.pause();
+            document.getElementById('feedback').innerText = "À toi !";
+        }, 7000);
     }
 
-    function checkAnswer() {
-        const userVal = document.getElementById('userInput').value.toUpperCase().trim();
-        if (userVal === current.endLyrics) {
-            document.getElementById('feedback').style.color = "#1DB954";
-            document.getElementById('feedback').innerText = "BRAVO ! 🎉";
-            setTimeout(nextSong, 2000);
-        } else {
-            document.getElementById('feedback').style.color = "#ff4444";
-            document.getElementById('feedback').innerText = "NON ! C'était " + current.endLyrics;
-            setTimeout(nextSong, 3000);
-        }
-    }
-
-    // Ecouteurs d'événements
-    document.getElementById('playBtn').addEventListener('click', startClip);
-    document.getElementById('verifyBtn').addEventListener('click', checkAnswer);
+    // Gérer la touche Entrée pour Android
     document.getElementById('userInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') checkAnswer();
+        if (e.key === 'Enter') {
+            const userVal = document.getElementById('userInput').value.toUpperCase().trim();
+            if (userVal === current.endLyrics) {
+                document.getElementById('feedback').innerText = "BRAVO ! 🎉";
+                setTimeout(nextSong, 2000);
+            } else {
+                document.getElementById('feedback').innerText = "NON ! C'était " + current.endLyrics;
+                setTimeout(nextSong, 3000);
+            }
+        }
     });
-
-    // Lancement au démarrage
-    nextSong();
 </script>
 </body>
 </html>
