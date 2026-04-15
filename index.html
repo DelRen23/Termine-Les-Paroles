@@ -3,130 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Micro d'Or - Blind Test</title>
-    
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3844/3844724.png">
-    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3844/3844724.png">
-
+    <title>Micro d'Or - Mode Casque</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
-        .card { background: #1a1f29; padding: 30px; border-radius: 30px; text-align: center; width: 85%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid #333; }
-        #player { position: absolute; top: -9999px; left: -9999px; } /* Cache la vidéo proprement */
-        .artist-name { color: #1DB954; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; font-size: 14px; }
-        .btn-play { background: #ff0000; color: white; border: none; width: 80px; height: 80px; border-radius: 50%; cursor: pointer; font-size: 30px; margin-bottom: 20px; transition: 0.3s; box-shadow: 0 0 20px rgba(255,0,0,0.4); }
-        .btn-play:disabled { background: #555; box-shadow: none; cursor: default; opacity: 0.5; }
-        input { width: 100%; padding: 15px; border-radius: 15px; border: none; font-size: 18px; text-align: center; background: #2a303c; color: white; outline: none; margin-top: 10px; }
-        button.verify { width: 100%; padding: 15px; border-radius: 15px; border: none; background: #1DB954; color: white; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .card { background: #1a1f29; padding: 30px; border-radius: 30px; text-align: center; width: 85%; max-width: 400px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .artist-name { color: #1DB954; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; }
+        .btn-play { background: #ff4444; color: white; border: none; width: 90px; height: 90px; border-radius: 50%; cursor: pointer; font-size: 35px; margin-bottom: 20px; box-shadow: 0 0 20px rgba(255,68,68,0.5); }
+        input { width: 100%; padding: 15px; border-radius: 15px; border: none; font-size: 18px; text-align: center; background: #2a303c; color: white; outline: none; box-sizing: border-box; }
+        button.verify { width: 100%; padding: 15px; border-radius: 15px; border: none; background: #1DB954; color: white; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 16px; }
         .feedback { margin-top: 20px; font-weight: bold; min-height: 50px; font-size: 18px; }
-        .score { font-size: 12px; color: #666; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <div id="player"></div>
     <div id="artistDisplay" class="artist-name">CHARGEMENT...</div>
-    <button class="btn-play" id="playBtn" onclick="startClip()">▶️</button>
-    <div id="instruction" style="color:#aaa; font-size:14px; margin-bottom:15px;">Écoute et complète les paroles</div>
+    <button class="btn-play" id="playBtn">▶️</button>
+    <div id="instruction" style="color:#888; font-size:12px; margin-bottom:15px;">Monte le son multimédia (Écouteurs)</div>
     
-    <input type="text" id="userInput" placeholder="La suite est..." autocomplete="off" spellcheck="false">
-    <button class="verify" onclick="checkAnswer()">VALIDER 🎤</button>
-    
+    <input type="text" id="userInput" placeholder="Écris la suite..." autocomplete="off">
+    <button class="verify" id="verifyBtn">VALIDER 🎤</button>
     <div id="feedback" class="feedback"></div>
-    <div class="score">Score : <span id="scoreVal">0</span></div>
 </div>
 
 <script>
+    // Liste des extraits directs (Lien Cjoint = Direct MP3)
     const songs = [
-        { artist: "Indochine", ytId: "74ezE7LIdv8", start: 80, duration: 6, endLyrics: "LUNE" }, 
-        { artist: "Début de Soirée", ytId: "l_S-v8m1Z9o", start: 58, duration: 6, endLyrics: "NUIT" }, 
-        { artist: "Céline Dion", ytId: "AzaTyXcVatw", start: 67, duration: 5, endLyrics: "ENCORE" }, 
-        { artist: "Jean-Jacques Goldman", ytId: "zFwaRHFizCc", start: 57, duration: 4, endLyrics: "SIGNE" }, 
-        { artist: "Stromae", ytId: "VHoT4N43jK8", start: 48, duration: 4, endLyrics: "DANSE" }, 
-        { artist: "Image", ytId: "fM_mR8I-V_w", start: 43, duration: 6, endLyrics: "NUIT" }, 
-        { artist: "Louane", ytId: "e9HeS-Y_uoo", start: 46, duration: 4, endLyrics: "JOUR" }, 
-        { artist: "France Gall", ytId: "m_S4vEOnEBY", start: 40, duration: 6, endLyrics: "PIANO" }, 
-        { artist: "Patrick Bruel", ytId: "fH_jO5Ff8bM", start: 104, duration: 5, endLyrics: "RENDEZ-VOUS" }, 
-        { artist: "Johnny Hallyday", ytId: "S-AIs0A_T7M", start: 44, duration: 4, endLyrics: "AIMER" }
+        { artist: "Céline Dion", url: "https://www.cjoint.com/doc/24_03/NCpuvYmO4J4_celine-extrait.mp3", endLyrics: "ENCORE" },
+        { artist: "Indochine", url: "https://www.cjoint.com/doc/24_03/NCpuxmH8J4_indo-extrait.mp3", endLyrics: "LUNE" },
+        { artist: "Jean-Jacques Goldman", url: "https://www.cjoint.com/doc/24_03/NCpuyG68J4_goldman-extrait.mp3", endLyrics: "SIGNE" },
+        { artist: "Images", url: "https://www.cjoint.com/doc/24_03/NCpuzC88J4_images-extrait.mp3", endLyrics: "NUIT" }
     ];
 
-    let player;
     let current = {};
-    let score = 0;
-    let isWaiting = false;
-
-    var tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    var firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-    function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
-            height: '1',
-            width: '1',
-            events: { 'onReady': nextSong }
-        });
-    }
+    const audio = new Audio();
+    
+    // Configuration pour forcer le passage sur Android
+    audio.preload = "auto";
+    audio.crossOrigin = "anonymous";
 
     function nextSong() {
-        isWaiting = false;
         current = songs[Math.floor(Math.random() * songs.length)];
         document.getElementById('artistDisplay').innerText = current.artist;
         document.getElementById('userInput').value = "";
         document.getElementById('feedback').innerText = "";
-        document.getElementById('playBtn').disabled = false;
-        document.getElementById('userInput').disabled = false;
+        document.getElementById('feedback').style.color = "white";
+        audio.src = current.url;
+        audio.load();
     }
 
+    // Fonction de lecture robuste
     function startClip() {
-        if(isWaiting || !player) return;
+        // Sur Android, on réinitialise le volume à chaque clic
+        audio.volume = 1.0;
         
-        document.getElementById('playBtn').disabled = true;
-        document.getElementById('feedback').style.color = "#1DB954";
-        document.getElementById('feedback').innerText = "Chargement...";
+        const playPromise = audio.play();
 
-        // Sécurité Android pour le son
-        player.unMute();
-        player.setVolume(100);
-
-        player.loadVideoById({
-            videoId: current.ytId,
-            startSeconds: current.start
-        });
-        
-        player.playVideo(); // Force la lecture sur Chrome Android
-
-        setTimeout(() => {
-            player.pauseVideo();
-            document.getElementById('feedback').style.color = "white";
-            document.getElementById('feedback').innerText = "À toi de compléter !";
-            document.getElementById('userInput').focus();
-        }, current.duration * 1000);
-    }
-
-    function checkAnswer() {
-        if(isWaiting) return;
-        const userVal = document.getElementById('userInput').value.toUpperCase().trim();
-        
-        if (userVal === current.endLyrics.toUpperCase()) {
-            score++;
-            document.getElementById('scoreVal').innerText = score;
-            document.getElementById('feedback').style.color = "#1DB954";
-            document.getElementById('feedback').innerText = "BRAVO ! 🎉";
-            isWaiting = true;
-            setTimeout(nextSong, 2000);
-        } else {
-            document.getElementById('feedback').style.color = "#ff4444";
-            document.getElementById('feedback').innerHTML = `RATÉ ! ❌<br><span style="font-size:14px; color:#aaa;">C'était : ${current.endLyrics}</span>`;
-            isWaiting = true;
-            document.getElementById('userInput').disabled = true;
-            setTimeout(nextSong, 3500);
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                document.getElementById('feedback').innerText = "Écoute...";
+                setTimeout(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    document.getElementById('feedback').innerText = "À toi !";
+                }, 6500);
+            }).catch(error => {
+                document.getElementById('feedback').innerText = "Appuie encore sur Play !";
+                console.log("Erreur lecture:", error);
+            });
         }
     }
 
+    function checkAnswer() {
+        const userVal = document.getElementById('userInput').value.toUpperCase().trim();
+        if (userVal === current.endLyrics) {
+            document.getElementById('feedback').style.color = "#1DB954";
+            document.getElementById('feedback').innerText = "BRAVO ! 🎉";
+            setTimeout(nextSong, 2000);
+        } else {
+            document.getElementById('feedback').style.color = "#ff4444";
+            document.getElementById('feedback').innerText = "NON ! C'était " + current.endLyrics;
+            setTimeout(nextSong, 3000);
+        }
+    }
+
+    // Ecouteurs d'événements
+    document.getElementById('playBtn').addEventListener('click', startClip);
+    document.getElementById('verifyBtn').addEventListener('click', checkAnswer);
     document.getElementById('userInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') checkAnswer();
     });
+
+    // Lancement au démarrage
+    nextSong();
 </script>
 </body>
 </html>
