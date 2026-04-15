@@ -3,92 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Micro d'Or - Bluetooth Edition</title>
+    <title>Micro d'Or - Force Audio V3</title>
     <style>
         body { font-family: sans-serif; background: #0b0e14; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         .card { background: #1a1f29; padding: 30px; border-radius: 30px; text-align: center; width: 85%; max-width: 400px; border: 1px solid #333; }
         .btn-play { background: #1DB954; color: white; border: none; width: 90px; height: 90px; border-radius: 50%; cursor: pointer; font-size: 35px; margin-bottom: 20px; }
-        .feedback { margin-top: 20px; font-weight: bold; min-height: 50px; font-size: 18px; }
-        input { width: 100%; padding: 15px; border-radius: 15px; border: none; background: #2a303c; color: white; text-align: center; font-size: 18px; outline: none; }
-        #unlocker { position:fixed; top:0; left:0; width:100%; height:100%; background:#0b0e14; z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        #unlocker { position:fixed; top:0; left:0; width:100%; height:100%; background:#0b0e14; z-index:999; display:flex; align-items:center; justify-content:center; }
     </style>
 </head>
 <body>
 
 <div id="unlocker">
-    <button onclick="wakeUpBluetooth()" style="padding:25px 50px; border-radius:50px; border:none; background:#1DB954; color:white; font-weight:bold; font-size:22px; box-shadow: 0 0 20px rgba(29,185,84,0.5);">ACTIVER LE CASQUE 🎧</button>
-    <p style="margin-top:20px; color:#666; text-align:center; padding:0 20px;">Clique ici pour forcer la connexion Bluetooth en mode Vibreur</p>
+    <button onclick="startEngine()" style="padding:25px 50px; border-radius:50px; border:none; background:#1DB954; color:white; font-weight:bold; font-size:20px;">LANCER LE JEU 🎧</button>
 </div>
 
 <div class="card">
-    <div id="artistDisplay" style="color:#1DB954; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">...</div>
-    <button class="btn-play" id="playBtn" onclick="startClip()">▶️</button>
-    <input type="text" id="userInput" placeholder="Réponse..." autocomplete="off">
-    <div id="feedback" class="feedback"></div>
+    <div id="artistDisplay" style="color:#1DB954; font-weight:bold; margin-bottom:10px;">PRÊT ?</div>
+    <button class="btn-play" onclick="playSound()">▶️</button>
+    <div id="feedback" style="margin-top:20px;"></div>
 </div>
 
 <script>
     const songs = [
-        { artist: "Céline Dion", url: "https://www.cjoint.com/doc/24_03/NCpuvYmO4J4_celine-extrait.mp3", endLyrics: "ENCORE" },
-        { artist: "Indochine", url: "https://www.cjoint.com/doc/24_03/NCpuxmH8J4_indo-extrait.mp3", endLyrics: "LUNE" },
-        { artist: "Jean-Jacques Goldman", url: "https://www.cjoint.com/doc/24_03/NCpuyG68J4_goldman-extrait.mp3", endLyrics: "SIGNE" }
+        { artist: "Céline Dion", url: "https://www.cjoint.com/doc/24_03/NCpuvYmO4J4_celine-extrait.mp3" },
+        { artist: "Indochine", url: "https://www.cjoint.com/doc/24_03/NCpuxmH8J4_indo-extrait.mp3" }
     ];
 
-    let current = {};
-    const audio = new Audio();
-    audio.crossOrigin = "anonymous";
+    let audioCtx, gainNode, currentBuffer;
 
-    // Cette fonction force le Bluetooth à rester "On"
-    function wakeUpBluetooth() {
-        // On joue un son vide pour "ouvrir" le canal Bluetooth
-        audio.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=";
-        audio.play().then(() => {
-            document.getElementById('unlocker').style.display = 'none';
-            nextSong();
-        }).catch(e => {
-            document.getElementById('unlocker').style.display = 'none';
-            nextSong();
-        });
+    // Cette fonction initialise le son pour TOUS les navigateurs
+    async function startEngine() {
+        window.AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        gainNode = audioCtx.createGain();
+        gainNode.gain.value = 1; // Volume max
+        gainNode.connect(audioCtx.destination);
+        
+        document.getElementById('unlocker').style.display = 'none';
+        loadNext();
     }
 
-    function nextSong() {
-        current = songs[Math.floor(Math.random() * songs.length)];
-        document.getElementById('artistDisplay').innerText = current.artist;
-        document.getElementById('userInput').value = "";
-        document.getElementById('feedback').innerText = "";
-        audio.src = current.url;
-        audio.load();
+    async function loadNext() {
+        const song = songs[Math.floor(Math.random() * songs.length)];
+        document.getElementById('artistDisplay').innerText = song.artist;
+        const resp = await fetch(song.url);
+        const arrayBuf = await resp.arrayBuffer();
+        currentBuffer = await audioCtx.decodeAudioData(arrayBuf);
     }
 
-    function startClip() {
-        if(!audio.src) return;
+    function playSound() {
+        if (!currentBuffer) return;
         
-        // On force le volume à chaque fois (Bluetooth bug fix)
-        audio.volume = 1.0;
-        audio.currentTime = 0;
+        // Relance le contexte s'il a été suspendu par le mode vibreur
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        const source = audioCtx.createBufferSource();
+        source.buffer = currentBuffer;
+        source.connect(gainNode);
+        source.start(0);
         
-        audio.play();
-        document.getElementById('feedback').innerText = "Écoute bien...";
-        
-        setTimeout(() => {
-            audio.pause();
+        document.getElementById('feedback').innerText = "Lecture...";
+        setTimeout(() => { 
+            source.stop(); 
             document.getElementById('feedback').innerText = "À toi !";
+            loadNext(); 
         }, 7000);
     }
-
-    // Gérer la touche Entrée pour Android
-    document.getElementById('userInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            const userVal = document.getElementById('userInput').value.toUpperCase().trim();
-            if (userVal === current.endLyrics) {
-                document.getElementById('feedback').innerText = "BRAVO ! 🎉";
-                setTimeout(nextSong, 2000);
-            } else {
-                document.getElementById('feedback').innerText = "NON ! C'était " + current.endLyrics;
-                setTimeout(nextSong, 3000);
-            }
-        }
-    });
 </script>
 </body>
 </html>
