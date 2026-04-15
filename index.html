@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Micro d'Or - Blind Test</title>
+    
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3844/3844724.png">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3844/3844724.png">
+
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        .card { background: #1a1f29; padding: 30px; border-radius: 30px; text-align: center; width: 85%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid #333; }
+        #player { display: none; } /* On cache la vidéo pour ne garder que le son */
+        .artist-name { color: #1DB954; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; font-size: 14px; }
+        .btn-play { background: #ff0000; color: white; border: none; width: 80px; height: 80px; border-radius: 50%; cursor: pointer; font-size: 30px; margin-bottom: 20px; transition: 0.3s; box-shadow: 0 0 20px rgba(255,0,0,0.4); }
+        .btn-play:disabled { background: #555; box-shadow: none; cursor: default; }
+        input { width: 100%; padding: 15px; border-radius: 15px; border: none; font-size: 18px; text-align: center; background: #2a303c; color: white; outline: none; margin-top: 10px; }
+        button.verify { width: 100%; padding: 15px; border-radius: 15px; border: none; background: #1DB954; color: white; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; }
+        .feedback { margin-top: 20px; font-weight: bold; min-height: 50px; font-size: 18px; }
+        .score { font-size: 12px; color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div id="player"></div>
+    <div id="artistDisplay" class="artist-name">CHARGEMENT...</div>
+    <button class="btn-play" id="playBtn" onclick="startClip()">▶️</button>
+    <div id="instruction" style="color:#aaa; font-size:14px; margin-bottom:15px;">Écoute l'extrait et complète</div>
+    
+    <input type="text" id="userInput" placeholder="Ecris la suite..." autocomplete="off" spellcheck="false">
+    <button class="verify" onclick="checkAnswer()">VALIDER 🎤</button>
+    
+    <div id="feedback" class="feedback"></div>
+    <div class="score">Score : <span id="scoreVal">0</span></div>
+</div>
+
+<script>
+    // LISTE DES CHANSONS (Prête à l'emploi)
+    const songs = [
+        { artist: "Indochine", ytId: "74ezE7LIdv8", start: 80, duration: 6, endLyrics: "LUNE" }, 
+        { artist: "Début de Soirée", ytId: "l_S-v8m1Z9o", start: 58, duration: 6, endLyrics: "NUIT" }, 
+        { artist: "Céline Dion", ytId: "AzaTyXcVatw", start: 67, duration: 5, endLyrics: "ENCORE" }, 
+        { artist: "Jean-Jacques Goldman", ytId: "zFwaRHFizCc", start: 57, duration: 4, endLyrics: "SIGNE" }, 
+        { artist: "Stromae", ytId: "VHoT4N43jK8", start: 48, duration: 4, endLyrics: "DANSE" }, 
+        { artist: "Image", ytId: "fM_mR8I-V_w", start: 43, duration: 6, endLyrics: "NUIT" }, 
+        { artist: "Louane", ytId: "e9HeS-Y_uoo", start: 46, duration: 4, endLyrics: "JOUR" }, 
+        { artist: "France Gall", ytId: "m_S4vEOnEBY", start: 40, duration: 6, endLyrics: "PIANO" }, 
+        { artist: "Patrick Bruel", ytId: "fH_jO5Ff8bM", start: 104, duration: 5, endLyrics: "RENDEZ-VOUS" }, 
+        { artist: "Johnny Hallyday", ytId: "S-AIs0A_T7M", start: 44, duration: 4, endLyrics: "AIMER" }
+    ];
+
+    let player;
+    let current = {};
+    let score = 0;
+    let isWaiting = false;
+
+    // API YouTube
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            events: { 'onReady': nextSong }
+        });
+    }
+
+    function nextSong() {
+        isWaiting = false;
+        current = songs[Math.floor(Math.random() * songs.length)];
+        document.getElementById('artistDisplay').innerText = current.artist;
+        document.getElementById('userInput').value = "";
+        document.getElementById('feedback').innerText = "";
+        document.getElementById('playBtn').disabled = false;
+        document.getElementById('userInput').disabled = false;
+    }
+
+    function startClip() {
+        if
